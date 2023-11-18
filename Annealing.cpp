@@ -16,8 +16,8 @@ void ParseInput(string FileName){ //Function to store the netlist file in vector
         return;
     }
 
-    int numCells, numNets, numRows, numColumns;
-    InetList >> numCells >> numNets >> numRows >> numColumns;
+    int numTotalComponents, numNets, numRows, numColumns;
+    InetList >> numTotalComponents >> numNets >> numRows >> numColumns;
 
     vector<vector<Cell>> netlist;
 
