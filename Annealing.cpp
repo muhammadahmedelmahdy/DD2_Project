@@ -5,7 +5,10 @@
 #include<algorithm>
 #include<cstdlib>
 #include<ctime>
+#include<cmath>
 #include<unordered_map>
+#include<iomanip>
+
 using namespace std;
 
 struct Cell {
@@ -14,7 +17,10 @@ struct Cell {
     int y;
 };
 
-vector<vector<Cell>> ParseInput(string FileName, int& numCells,int & numNets,int& numRows,int& numColumns) { //Function to store the netlist file in vectors.
+vector<vector<Cell>> netlist;
+vector<vector<int>> grid;
+
+void  ParseInput(string FileName, int& numTotalComponents, int& numRows, int& numColumns) { //Function to store the netlist file in vectors.
     ifstream InetList(FileName);
 
     if (!InetList.is_open()) {
@@ -22,10 +28,13 @@ vector<vector<Cell>> ParseInput(string FileName, int& numCells,int & numNets,int
         return;
     }
 
-   
-    InetList >> numCells >> numNets >> numRows >> numColumns;
+    int numNets;
+    InetList >> numTotalComponents >> numNets >> numRows >> numColumns;
+    netlist.resize(numNets);
+    grid.resize(numRows);
 
-    vector<vector<Cell>> netlist;
+    for (int i = 0; i < grid.size(); i++)
+        grid[i].resize(numColumns);
 
     for (int i = 0; i < numNets; ++i) {
         int numComponents;
@@ -43,7 +52,6 @@ vector<vector<Cell>> ParseInput(string FileName, int& numCells,int & numNets,int
     }
 
     InetList.close();
-    return netlist;
 }
 
 void swap(Cell& a, Cell& b) { //function to swap two cells together in case we are placing a cell in place of other cell.
@@ -63,18 +71,19 @@ bool compareY(Cell A, Cell B) {
     return A.y < B.y;
 }
 
-bool checker(vector<vector<Cell>> netlist, double temperature) { //function to assist in accepting or rejecting a move.
+bool checker(vector<vector<Cell>> tempNetlist, double temperature, double& currentTemp) { //function to assist in accepting or rejecting a move.
 
     int total = 0;
-    for (int i = 0; i < netlist.size(); i++) {
-        sort(netlist[i].begin(), netlist[i].end(), compareX);
-        int dx = netlist[i][netlist[i].size() - 1].x - netlist[i][0].x;
-        sort(netlist[i].begin(), netlist[i].end(), compareY);
-        int dy = netlist[i][netlist[i].size() - 1].y - netlist[i][0].y;
+    for (int i = 0; i < tempNetlist.size(); i++) {
+        sort(tempNetlist[i].begin(), tempNetlist[i].end(), compareX);
+        int dx = tempNetlist[i][tempNetlist[i].size() - 1].x - tempNetlist[i][0].x;
+        sort(tempNetlist[i].begin(), tempNetlist[i].end(), compareY);
+        int dy = tempNetlist[i][tempNetlist[i].size() - 1].y - tempNetlist[i][0].y;
         total += dx + dy;
     }
 
     if (total < temperature) {
+        currentTemp = total;
         return true;
     }
     else {
@@ -103,17 +112,23 @@ int calculateHPWL(vector<vector<Cell>> netlist)
     }
     return totalHPWL;
 }
-void annealing(vector<vector<Cell>> netlist, int numCells,int  numRows,int numColumns)
+void annealing(int numTotalComponents, int  numRows,int numColumns)
 {
     unordered_map<int, int> placedx;
     unordered_map<int, int> placedy;
-    vector<vector<Cell>> grid(numRows);
-    for (int i = 0; i < grid.size(); i++)
-        grid[i].resize(numColumns);
     //get the connections from the netlist
     // do random placement
     srand(time(0));
-    for (int i = 1; i <= numCells; i++)
+    for (int i = 0; i < numRows; i++)
+    {
+            for (int j = 0; j < numColumns; j++)
+            {
+                grid[i][j] = -1;
+
+            }
+    }
+
+    for (int i = 1; i <= numTotalComponents; i++)
     {
         int x_temp = rand() % numRows;
         while (placedx.find(x_temp) != placedx.end())
@@ -128,14 +143,10 @@ void annealing(vector<vector<Cell>> netlist, int numCells,int  numRows,int numCo
         }
         placedy[y_temp] = i;
 
-        Cell temp;
-        temp.number = i;
-        temp.x = x_temp;
-        temp.y = y_temp;
-        grid[x_temp][y_temp] = temp;
+        grid[x_temp][y_temp] = i;
         for (int k = 1; k < netlist.size(); k++)
         {
-            for (int j = 1; j < netlist[i].size(); j++)
+            for (int j = 1; j < netlist[k].size(); j++)
             {
                 if (netlist[k][j].number == i)
                 {
@@ -146,18 +157,85 @@ void annealing(vector<vector<Cell>> netlist, int numCells,int  numRows,int numCo
             }
         }
     }
+    cout << "done" << endl;
     // wire length calculation using HPWL
-    int HPWL = calculateHPWL(netlist);
+    double initialCost = calculateHPWL(netlist);
+    double initialTemp = initialCost * 500;
+    double finalTemp = 5*pow(10, -6)* initialCost;
+    double currentTemp = initialCost;
+
     // while loop
+    vector<vector<Cell>> temp_netlist = netlist;
 
+    while (currentTemp > finalTemp)
+    {
+        int x_temp1 = rand() % numRows;
+        int x_temp2 = rand() % numRows;
+        int y_temp1 = rand() % numColumns;
+        int y_temp2 = rand() % numColumns;
 
+        while (x_temp1 == x_temp2 && y_temp1 == y_temp2)
+        {
+            x_temp1 = rand() % numRows;
+            x_temp2 = rand() % numRows;
+            y_temp1 = rand() % numColumns;
+            y_temp2 = rand() % numColumns;
+        }
+
+        int comp1 = grid[x_temp1][y_temp1];
+        int comp2 = grid[x_temp2][y_temp2];
+
+        for (int k = 0; k < temp_netlist.size(); k++)
+        {
+            for (int j = 0; j < temp_netlist[k].size(); j++)
+            {
+                if (temp_netlist[k][j].number == comp1)
+                {
+                    temp_netlist[k][j].x = x_temp2;
+                    temp_netlist[k][j].y = y_temp2;
+
+                }
+                if (temp_netlist[k][j].number == comp2)
+                {
+                    temp_netlist[k][j].x = x_temp1;
+                    temp_netlist[k][j].y = y_temp1;
+
+                }                
+            }
+        }
+        double nextTemp = currentTemp * 0.95;
+        if (checker(temp_netlist, nextTemp, currentTemp))
+        {
+            grid[x_temp1][y_temp1] = grid[x_temp2][y_temp2];
+            netlist = temp_netlist;
+        }
+    }
+}
+
+void PrintFinalPlacment()
+{
+    for (int i = 0; i < grid.size(); i++)
+    {
+        for (int j = 0; j < grid[i].size(); j++)
+        {
+            cout << setw(4) << setfill('0') << grid[i][j];
+        }
+    }
+}
+
+void Run ()
+{
+    int numTotalComponents, numRows, numColumns;
+
+    ParseInput("d1.txt", numTotalComponents, numRows, numColumns);
+    cout << "done" << endl;
+    annealing(numTotalComponents, numRows, numColumns);
+    cout << "done" << endl;
+    PrintFinalPlacment();
 
 }
+
 int main() {
-
-
-
-
-
+    Run();
     return 0;
 }
