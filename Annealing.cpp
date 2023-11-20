@@ -71,16 +71,22 @@ bool compareY(Cell A, Cell B) {
     return A.y < B.y;
 }
 
-bool checker(vector<vector<Cell>> tempNetlist, double temperature, double& currentTemp) { //function to assist in accepting or rejecting a move.
-
+int calculateHPWL(vector<vector<Cell>> Netlist)
+{
     int total = 0;
-    for (int i = 0; i < tempNetlist.size(); i++) {
-        sort(tempNetlist[i].begin(), tempNetlist[i].end(), compareX);
-        int dx = tempNetlist[i][tempNetlist[i].size() - 1].x - tempNetlist[i][0].x;
-        sort(tempNetlist[i].begin(), tempNetlist[i].end(), compareY);
-        int dy = tempNetlist[i][tempNetlist[i].size() - 1].y - tempNetlist[i][0].y;
+    for (int i = 0; i < Netlist.size(); i++) {
+        sort(Netlist[i].begin(), Netlist[i].end(), compareX);
+        int dx = Netlist[i][Netlist[i].size() - 1].x - Netlist[i][0].x;
+        sort(Netlist[i].begin(), Netlist[i].end(), compareY);
+        int dy = Netlist[i][Netlist[i].size() - 1].y - Netlist[i][0].y;
         total += dx + dy;
     }
+    return total;
+}
+
+bool checker(vector<vector<Cell>> tempNetlist, double temperature, double& currentTemp) { //function to assist in accepting or rejecting a move.
+
+    int total = calculateHPWL(tempNetlist);
 
     if (total < temperature) {
         currentTemp = total;
@@ -90,28 +96,7 @@ bool checker(vector<vector<Cell>> tempNetlist, double temperature, double& curre
         return false;
     }
 }
-int calculateHPWL(vector<vector<Cell>> netlist)
-{
-    int totalHPWL = 0;
 
-    for (const auto& net : netlist) {
-        if (net.empty()) {
-            continue;
-        }
-        int minX = net[0].x;
-        int minY = net[0].y;
-        int maxX = net[0].x;
-        int maxY = net[0].y;
-        for (const auto& cell : net) {
-            minX = min(minX, cell.x);
-            minY = min(minY, cell.y);
-            maxX = max(maxX, cell.x);
-            maxY = max(maxY, cell.y);
-        }
-        totalHPWL += (maxX - minX) + (maxY - minY);
-    }
-    return totalHPWL;
-}
 void annealing(int numTotalComponents, int  numRows,int numColumns)
 {
     unordered_map<int, int> placedx;
