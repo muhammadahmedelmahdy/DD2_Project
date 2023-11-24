@@ -21,14 +21,7 @@ public:
     placer(string filename)
     {
         parseInput(filename, totalcomponents);
-        cout << netlistx.size() << "  " << netlistx[1].size() << endl;
-        auto start = high_resolution_clock::now();        
         make_initialPlacement(totalcomponents);
-        auto stop = high_resolution_clock::now();
-        auto duration = duration_cast<microseconds>(stop - start);
-        std::cout << "Time taken by function: " << duration.count() << " microseconds" << std::endl;
-        cout << calculateHPWL(netlistx, netlisty) << endl;
-        printFinalPlacement();
     }
     void run() {
         auto start = high_resolution_clock::now();
@@ -117,7 +110,7 @@ private:
                 int max2 = MaxCo(netlisty[i]);
                 int min2 = MinCo(netlisty[i]);
                 int dy = max2 - min2;
-                total = dx + dy;
+                total += dx + dy;
             }
             return total;
         }
@@ -188,7 +181,7 @@ private:
     void make_initialPlacement(int numTotalComponents)
     {
         vector<int> cellFills(numTotalComponents);
-        generate(cellFills.begin(), cellFills.end(), [n = 1]() mutable { return n++; });
+        generate(cellFills.begin(), cellFills.end(), [n = 0]() mutable { return n++; });
         cellFills.resize(numRows * numColumns);
 
         for (int i = numTotalComponents; i < numRows * numColumns; i++)
@@ -217,7 +210,6 @@ private:
             }
 
         cout << "initial placement done" << endl;
-
     }
 
 
