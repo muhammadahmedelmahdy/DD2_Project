@@ -22,8 +22,9 @@ struct Cell {
 
 vector<vector<Cell>> netlist;
 vector<vector<int>> grid;
+int numRows, numColumns;
 
-void  ParseInput(string FileName, int& numTotalComponents, int& numRows, int& numColumns) { //Function to store the netlist file in vectors.
+void  ParseInput(string FileName, int& numTotalComponents) { //Function to store the netlist file in vectors.
     ifstream InetList(FileName);
 
     if (!InetList.is_open()) {
@@ -86,12 +87,11 @@ int calculateHPWL(vector<vector<Cell>> Netlist)
     return total;
 }
 
-bool checker(vector<vector<Cell>> tempNetlist, double temperature, double& currentTemp) { //function to assist in accepting or rejecting a move.
+bool checker(vector<vector<Cell>> tempNetlist, double temperature) { //function to assist in accepting or rejecting a move.
 
     int total = calculateHPWL(tempNetlist);
 
     if (total < temperature) {
-        currentTemp = total;
         return true;
     }
     else {
@@ -99,8 +99,8 @@ bool checker(vector<vector<Cell>> tempNetlist, double temperature, double& curre
     }
 }
 
-void annealing(int numTotalComponents, int  numRows,int numColumns)
-{    
+void initialPlacement(int numTotalComponents)
+{
     vector<int> cellFills(numTotalComponents);
     generate(cellFills.begin(), cellFills.end(), [n = 1] () mutable { return n++; });
     cellFills.resize(numRows*numColumns);
@@ -135,58 +135,74 @@ void annealing(int numTotalComponents, int  numRows,int numColumns)
         }
     }
 
+}
+
+void annealing()
+{    
     // wire length calculation using HPWL
-    // double initialCost = calculateHPWL(netlist);
-    // double initialTemp = initialCost * 500;
-    // double finalTemp = 5*pow(10, -6)* initialCost;
-    // double currentTemp = initialCost;
+    double initialCost = calculateHPWL(netlist);
+    double initialTemp = initialCost * 500;
+    double finalTemp = 5*pow(10, -6)* initialCost;
+    double currentTemp = initialCost;
 
-    // // while loop
-    // vector<vector<Cell>> temp_netlist = netlist;
+    // while loop
+    vector<vector<Cell>> temp_netlist = netlist;
 
-    // while (currentTemp > finalTemp)
-    // {
-    //     int x_temp1 = rand() % numRows;
-    //     int x_temp2 = rand() % numRows;
-    //     int y_temp1 = rand() % numColumns;
-    //     int y_temp2 = rand() % numColumns;
+    srand(time(0));
+    while (currentTemp > finalTemp)
+    {
+        for (int i = 0; i < 10*numRows*numColumns; i++)
+        {
+        
+            cout << "index: " << i << endl;
+            int x_temp1 = rand() % numRows;
+            int x_temp2 = rand() % numRows;
+            int y_temp1 = rand() % numColumns;
+            int y_temp2 = rand() % numColumns;
 
-    //     while (x_temp1 == x_temp2 && y_temp1 == y_temp2)
-    //     {
-    //         x_temp1 = rand() % numRows;
-    //         x_temp2 = rand() % numRows;
-    //         y_temp1 = rand() % numColumns;
-    //         y_temp2 = rand() % numColumns;
-    //     }
+            while (x_temp1 == x_temp2 && y_temp1 == y_temp2)
+            {
+                x_temp1 = rand() % numRows;
+                x_temp2 = rand() % numRows;
+                y_temp1 = rand() % numColumns;
+                y_temp2 = rand() % numColumns;
+            }
+            int comp1 = grid[x_temp1][y_temp1];
+            int comp2 = grid[x_temp2][y_temp2];
 
-    //     int comp1 = grid[x_temp1][y_temp1];
-    //     int comp2 = grid[x_temp2][y_temp2];
+            for (int k = 0; k < temp_netlist.size(); k++)
+            {
+                for (int j = 0; j < temp_netlist[k].size(); j++)
+                {
+                    if (temp_netlist[k][j].number == comp1)
+                    {
+                        temp_netlist[k][j].x = x_temp2;
+                        temp_netlist[k][j].y = y_temp2;
 
-    //     for (int k = 0; k < temp_netlist.size(); k++)
-    //     {
-    //         for (int j = 0; j < temp_netlist[k].size(); j++)
-    //         {
-    //             if (temp_netlist[k][j].number == comp1)
-    //             {
-    //                 temp_netlist[k][j].x = x_temp2;
-    //                 temp_netlist[k][j].y = y_temp2;
+                    }
+                    if (temp_netlist[k][j].number == comp2)
+                    {
+                        temp_netlist[k][j].x = x_temp1;
+                        temp_netlist[k][j].y = y_temp1;
 
-    //             }
-    //             if (temp_netlist[k][j].number == comp2)
-    //             {
-    //                 temp_netlist[k][j].x = x_temp1;
-    //                 temp_netlist[k][j].y = y_temp1;
+                    }                
+                }
+            }
+            
+            double nextTemp = currentTemp * 0.95;
+            if (checker(temp_netlist, nextTemp))
+            {
+                grid[x_temp1][y_temp1] = comp2;
+                grid[x_temp2][y_temp2] = comp1;
+                netlist = temp_netlist;
+            }
+        }
 
-    //             }                
-    //         }
-    //     }
-    //     double nextTemp = currentTemp * 0.95;
-    //     if (checker(temp_netlist, nextTemp, currentTemp))
-    //     {
-    //         grid[x_temp1][y_temp1] = grid[x_temp2][y_temp2];
-    //         netlist = temp_netlist;
-    //     }
-    // }
+        currentTemp *= 0.95;
+    }
+
+    cout << "Initial cost: " << initialCost << endl;
+    cout << "Final Cost: " << calculateHPWL(netlist) << endl; 
 }
 
 void PrintFinalPlacment()
@@ -211,16 +227,17 @@ void PrintFinalPlacment()
 
 void Run ()
 {
-    int numTotalComponents, numRows, numColumns;
+    int numTotalComponents;
 
-    ParseInput("t3.txt", numTotalComponents, numRows, numColumns);
-    cout << "done" << endl;
+    ParseInput("t3.txt", numTotalComponents);
+    initialPlacement(numTotalComponents);
+    // PrintFinalPlacment();
     auto start = high_resolution_clock::now();
-    annealing(numTotalComponents, numRows, numColumns);
+    annealing();
     auto stop = high_resolution_clock::now();
     auto duration = duration_cast<microseconds>(stop - start);
     cout << "Time taken by function: " << duration.count() << " microseconds" << endl;
-    PrintFinalPlacment();
+    // PrintFinalPlacment();
 
 }
 
