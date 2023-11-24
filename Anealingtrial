@@ -149,18 +149,15 @@ private:
                 int comp2 = grid[x_temp2][y_temp2];
 
                 for (int i = 0; i < tempNetlistx.size(); i++) {
-                    if(comp1 != -1){
-                        if(netlistx[i].find(comp1) != netlistx[i].end())
+                        if(netlistx[i].find(comp1) != netlistx[i].end()){
                             netlistx[i][comp1] = x_temp2;
-                        if(netlisty[i].find(comp1) != netlisty[i].end())
                             netlisty[i][comp1] = y_temp2;
                         }
-                    if(comp2 != -1){
-                        if(netlistx[i].find(comp2) != netlistx[i].end())
+                        if(netlistx[i].find(comp2) != netlistx[i].end()){
                             netlistx[i][comp2] = x_temp1;
-                        if(netlisty[i].find(comp2) != netlisty[i].end())
                             netlisty[i][comp2] = y_temp1;
                         }
+                    
                 }
 
                 double nextTemp = currentTemp * 0.95;
@@ -198,14 +195,12 @@ private:
         for (int i = 0; i < numRows; i++)
             for (int j = 0; j < numColumns; j++){
                 grid[i][j] = cellFills[x];
-                if(cellFills[x] != -1){
                     for(int z = 0; z < netlistx.size(); z++){
-                        if(netlistx[z].find(cellFills[x]) != netlistx[z].end())
+                        if(netlistx[z].find(cellFills[x]) != netlistx[z].end()){
                         	netlistx[z][cellFills[x]] = i;
-                        if(netlisty[z].find(cellFills[x]) != netlisty[z].end())
                         	netlisty[z][cellFills[x]] = j;
+                        }
                     }
-                }
                 x++;
             }
 
