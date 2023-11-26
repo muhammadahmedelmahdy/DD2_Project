@@ -9,8 +9,8 @@
 #include <chrono>
 #include<unordered_map>
 #include<iomanip>
-#include <random>
-
+#include<random>
+#include<set>
 using namespace std::chrono;
 using namespace std;
 
@@ -18,6 +18,7 @@ struct Cell {
     int number;
     int x;
     int y;
+    vector<int>nets;
 };
 
 
@@ -31,6 +32,7 @@ public:
         auto stop = high_resolution_clock::now();
         auto duration = duration_cast<microseconds>(stop - start);
         cout << "Time taken by function: " << duration.count() << " microseconds" << endl;
+        calculateInitialHPWL();
 
     }
 
@@ -56,6 +58,7 @@ private:
     int numRows, numColumns;
     int totalcomponents, totalnets;
     vector<Cell*> components;
+    vector<int> HPWL;
     vector<vector<Cell*>> netlist;
     vector<vector<int>> grid;
 
@@ -94,6 +97,7 @@ private:
             {
                 int num;
                 netfile >> num;
+                components[num]->nets.push_back(i);
                 Cell* temp = components[num];
                 net.push_back(temp);
             }
@@ -153,18 +157,44 @@ private:
         return dx + dy;
     }
 
-    int calculateTotalHPWL(const vector<vector<Cell* >>& Netlist)
+    void calculateInitialHPWL()
+    {
+        for (auto const& net : netlist) {
+            HPWL.push_back(calculateHPWL(net));
+        }
+    }
+
+    int calculateTotalHPWL()
     {
         int total = 0;
-        for (auto const& net : Netlist) {
-            total += calculateHPWL(net);
+        for (int i=0; i < totalnets; i++) {
+            total += HPWL[i];
         }
         return total;
     }
 
-    bool checker(const vector<vector<Cell* >>& tempNetlist, double temperature)
+    bool checker(const  Cell* X, const Cell* Y, double temperature)
     {
-        int total = calculateTotalHPWL(tempNetlist);
+        set<int> nets;
+        if (X != NULL)
+            for (int i = 0; i < X->nets.size(); i++)
+            {
+                nets.insert(X->nets[i]);
+                // HPWL[X->nets[i]] = calculateHPWL(netlist[X->nets[i]]);
+            }
+        if (Y != NULL)
+            for (int i = 0; i < Y->nets.size(); i++)
+            {
+                nets.insert(Y->nets[i]);
+                // HPWL[Y->nets[i]] = calculateHPWL(netlist[Y->nets[i]]);
+            }
+        
+        for (const auto& net : nets)
+        {
+            HPWL[net]=calculateHPWL(netlist[net]);
+        }
+
+        int total = calculateTotalHPWL();
         return total < temperature;
     }
 
@@ -172,14 +202,14 @@ private:
 
     void annealing() {
         cout << "started annealing" << endl;
-        double initialCost = calculateTotalHPWL(netlist);
+        double initialCost = calculateTotalHPWL();
         double initialTemp = initialCost * 500;
         double finalTemp = 5 * pow(10, -6) * initialCost/ totalnets;
         double currentTemp = initialTemp;
 
         srand(time(0));
         while (currentTemp > finalTemp) {
-            for (int i = 0; i < 10 * numRows * numColumns; ++i) {
+            for (int i = 0; i < 10 * totalcomponents; ++i) {
                 int x_temp1 = rand() % numRows;
                 int x_temp2 = rand() % numRows;
                 int y_temp1 = rand() % numColumns;
@@ -192,20 +222,26 @@ private:
                     y_temp2 = rand() % numColumns;
                 }
 
+                Cell* X = NULL;
+                Cell* Y = NULL;
+
                 int comp1 = grid[x_temp1][y_temp1];
                 int comp2 = grid[x_temp2][y_temp2];
                 if (comp1 != -1)
                 {
                     components[comp1]->x = x_temp2;
                     components[comp1]->y = y_temp2;
+                    X = components[comp1];
                 }
                 if (comp2 != -1)
                 {
                     components[comp2]->x = x_temp1;
                     components[comp2]->y = y_temp1;
+                    Y = components[comp2];
                 }
 
-                if (checker(netlist, currentTemp)) {
+                auto start = high_resolution_clock::now();
+                if (checker(X, Y, currentTemp)) {
                     grid[x_temp1][y_temp1] = comp2;
                     grid[x_temp2][y_temp2] = comp1;
                 }
@@ -222,13 +258,17 @@ private:
                         components[comp2]->y = y_temp2;
                     }                    
                 }
+                auto stop = high_resolution_clock::now();
+                auto duration = duration_cast<microseconds>(stop - start);
+                cout << "Time taken by checker: " << duration.count() << " microseconds" << endl;
+                
             }
 
             currentTemp *= 0.95;
         }
 
         cout << "Initial cost: " << initialCost << endl;
-        cout << "Final Cost: " << calculateTotalHPWL(netlist) << endl;
+        cout << "Final Cost: " << calculateTotalHPWL() << endl;
     }
 
     void printFinalPlacement() const
@@ -249,7 +289,7 @@ private:
 
 
 int main() {
-    placer place("d1.txt");
+    placer place("t3.txt");
     place.run();
     return 0;
 }
