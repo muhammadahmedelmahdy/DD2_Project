@@ -14,9 +14,6 @@
 - [Performance and Optimization](#performance-and-optimization)
 - [Testing](#testing)
 - [Results and Analysis](#results-and-analysis)
-- [Contributing](#contributing)
-- [License](#license)
-- [Acknowledgements](#acknowledgements)
 
 ## Introduction
 
