@@ -31,6 +31,7 @@ public:
         initialPlacement(totalcomponents);
         auto stop = high_resolution_clock::now();
         auto duration = duration_cast<microseconds>(stop - start);
+        printFinalPlacement(); 
         cout << "Time taken by function: " << duration.count() << " microseconds" << endl;
         calculateInitialHPWL();
 
@@ -239,6 +240,7 @@ private:
 
     bool checker(const int IHPWL1, const  Cell* X, const Cell* Y, double temperature)
     {
+    	//cout << IHPWL1 << "  " << totalHPWL << "\n";
         if (X != NULL)
         {
             for (int i = 0; i < X->nets.size(); i++)
@@ -256,11 +258,13 @@ private:
             }
         }
      	//std::srand(std::time(0));   
-	int deltaCost = totalHPWL - IHPWL1;
+	int deltaCost = IHPWL1 - totalHPWL;
 	//cout << IHPWL1 << "  " << totalHPWL << "\n";
 	double random_number = static_cast<double>(std::rand()) / RAND_MAX;
 	//cout << random_number << "\n";
-	bool check = (deltaCost > 0 && (random_number) < (1 - exp(static_cast<double>(-deltaCost) / temperature)));
+	double e = 1 - exp(static_cast<double>(deltaCost) / temperature);
+	bool check = (deltaCost > 0 && (random_number) < e);
+    //    cout << random_number << "  " << e << "\n";
         return check;
     }
 
@@ -270,26 +274,19 @@ private:
         cout << "started annealing" << endl;
         double initialCost = totalHPWL;
         double initialTemp = initialCost * 500;
-        double finalTemp = 5 * pow(10, -6) * initialCost/ totalnets;
+        double finalTemp = 5 * pow(10, -6) * (initialCost/ totalnets);
         double currentTemp = initialCost * 500;
 	int IHPWL = initialCost; 
         //srand(time(0));
         while (currentTemp > finalTemp) {
             	int x_temp1, x_temp2, y_temp1, y_temp2;
-            for (int i = 0; i < 10 * totalcomponents; ++i) {
+            for (int i = 0; i < 10 * numRows * numColumns; ++i) {
 		//srand(time(0));
                 x_temp1 = rand() % numRows;
                 x_temp2 = rand() % numRows;
                 y_temp1 = rand() % numColumns;
                 y_temp2 = rand() % numColumns;
 		//cout << x_temp1 << "  " << x_temp2 << "    " << y_temp1 << "  " << y_temp2 << "\n" ;
-                while (x_temp1 == x_temp2 && y_temp1 == y_temp2)
-            {
-                x_temp1 = rand() % numRows;
-                x_temp2 = rand() % numRows;
-                y_temp1 = rand() % numColumns;
-                y_temp2 = rand() % numColumns;
-            }
 
                 Cell* X = NULL;
                 Cell* Y = NULL;
@@ -309,7 +306,9 @@ private:
                     Y = components[comp2];
                 }
                 IHPWL = totalHPWL;
-                if (checker(IHPWL, X, Y, currentTemp) == 0) {
+                bool checkk = checker(IHPWL, X, Y, currentTemp);
+                //cout << checkk << "  " << currentTemp <<"\n";
+                if (checkk == 0) {
                     grid[x_temp1][y_temp1] = comp2;
                     grid[x_temp2][y_temp2] = comp1;
                 }
@@ -329,6 +328,7 @@ private:
             }
 
             currentTemp *= 0.95;
+            //cout << totalHPWL << "\n";
         }
 
         cout << "Initial cost: " << initialCost << endl;
