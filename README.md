@@ -72,7 +72,7 @@ The project is organized as follows:
 
 ## Performance and Optimization
 
-The code has passed through many optimization stages to reduce its time complexity and reducing the runtime from 8 hours to 10 minutes for the largest netlist file (t3.txt) This has been accomplished by using pointers. More methods to improve the runtime are to be implemented and here is what we are considering:
+The code has passed through many optimization stages to reduce its time complexity and reducing the runtime from 8 hours to around 20 seconds for the largest netlist file (t3.txt) This has been accomplished by using pointers. More methods to improve the runtime are to be implemented and here is what we are considering:
 - Considering dividing the iterations and running them in parallel.
 - Finding a method to optimize HPWL calculation.
 - Reducing the number of available iterations.
@@ -82,4 +82,8 @@ The code has passed through many optimization stages to reduce its time complexi
 Comprehensive testing has been performed with all provided test files.
 
 ## Results and Analysis
+![image](https://github.com/muhammadahmedelmahdy/DD2_Project/assets/57318849/889a1611-00f6-4a44-9643-4550960cabd5)
+![image](https://github.com/muhammadahmedelmahdy/DD2_Project/assets/57318849/65c78c2e-da6b-40d2-b38d-73ce1461c8ae)
+![image](https://github.com/muhammadahmedelmahdy/DD2_Project/assets/57318849/fdacd2b2-60d5-4074-a649-f60c9b9ed259)
+
 
