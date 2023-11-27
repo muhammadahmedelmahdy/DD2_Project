@@ -255,10 +255,11 @@ private:
                 checkHPWL_Y (Y, Y->nets[i]);
             }
         }
-     	std::srand(std::time(0));   
+     	//std::srand(std::time(0));   
 	int deltaCost = totalHPWL - IHPWL1;
 	//cout << IHPWL1 << "  " << totalHPWL << "\n";
 	double random_number = static_cast<double>(std::rand()) / RAND_MAX;
+	//cout << random_number << "\n";
 	bool check = (deltaCost > 0 && (random_number) < (1 - exp(static_cast<double>(-deltaCost) / temperature)));
         return check;
     }
@@ -272,19 +273,23 @@ private:
         double finalTemp = 5 * pow(10, -6) * initialCost/ totalnets;
         double currentTemp = initialCost * 500;
 	int IHPWL = initialCost; 
-        srand(time(0));
+        //srand(time(0));
         while (currentTemp > finalTemp) {
             	int x_temp1, x_temp2, y_temp1, y_temp2;
             for (int i = 0; i < 10 * totalcomponents; ++i) {
-		srand(time(0));
+		//srand(time(0));
                 x_temp1 = rand() % numRows;
                 x_temp2 = rand() % numRows;
                 y_temp1 = rand() % numColumns;
                 y_temp2 = rand() % numColumns;
-		cout << x_temp1 << "  " << x_temp2 << "    " << y_temp1 << "  " << y_temp2 << "\n" ;
-                if (x_temp1 == x_temp2 && y_temp1 == y_temp2) {
-                    continue;
-                }
+		//cout << x_temp1 << "  " << x_temp2 << "    " << y_temp1 << "  " << y_temp2 << "\n" ;
+                while (x_temp1 == x_temp2 && y_temp1 == y_temp2)
+            {
+                x_temp1 = rand() % numRows;
+                x_temp2 = rand() % numRows;
+                y_temp1 = rand() % numColumns;
+                y_temp2 = rand() % numColumns;
+            }
 
                 Cell* X = NULL;
                 Cell* Y = NULL;
@@ -355,6 +360,7 @@ void emitError(char *s)
 int main(int argc, char *argv[]) {
         
     if(argc<2) emitError("use: placer <netlist_file_name>\n");
+    srand(time(0));
     placer place(argv[1]);
     place.run();
     return 0;
