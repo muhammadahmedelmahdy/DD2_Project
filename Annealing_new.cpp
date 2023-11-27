@@ -340,9 +340,16 @@ private:
     }
 };
 
+void emitError(char *s)
+{
+    cout << s;
+    exit(0);
+}
 
-int main() {
-    placer place("t3.txt");
+int main(int argc, char *argv[]) {
+        
+    if(argc<2) emitError("use: placer <netlist_file_name>\n");
+    placer place(argv[1]);
     place.run();
     return 0;
 }
