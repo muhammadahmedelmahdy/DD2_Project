@@ -2,6 +2,13 @@
     "files.associations": {
         "vector": "cpp",
         "iostream": "cpp",
-        "ostream": "cpp"
+        "ostream": "cpp",
+        "__split_buffer": "cpp",
+        "array": "cpp",
+        "deque": "cpp",
+        "queue": "cpp",
+        "span": "cpp",
+        "string": "cpp",
+        "string_view": "cpp"
     }
 }
