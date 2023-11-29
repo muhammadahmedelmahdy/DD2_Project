@@ -263,8 +263,8 @@ private:
 	double random_number = static_cast<double>(std::rand()) / RAND_MAX;
 	//cout << random_number << "\n";
 	double e = 1 - exp(static_cast<double>(deltaCost) / temperature);
-	bool check = (deltaCost > 0 && (random_number) < e);
-    //    cout << random_number << "  " << e << "\n";
+	bool check = (deltaCost < 0 && (random_number) < e);
+        //cout << deltaCost << "  " << temperature << "  " << random_number << "  " << e << "  " << check << "\n";
         return check;
     }
 
@@ -306,6 +306,9 @@ private:
                     Y = components[comp2];
                 }
                 IHPWL = totalHPWL;
+                vector<int> HPWL_Y_I, HPWL_X_I;
+                HPWL_Y_I = HPWL_X;
+                HPWL_X_I = HPWL_Y;
                 bool checkk = checker(IHPWL, X, Y, currentTemp);
                 //cout << checkk << "  " << currentTemp <<"\n";
                 if (checkk == 0) {
@@ -323,10 +326,16 @@ private:
                     {
                         components[comp2]->x = x_temp2;
                         components[comp2]->y = y_temp2;
-                    }                    
+                    }
+                    totalHPWL = IHPWL;
+                    HPWL_X = HPWL_X_I;
+                    HPWL_Y = HPWL_Y_I;                    
                 }
+                //printFinalPlacement();
+	        //cout << totalHPWL << "  " << IHPWL << "  " << currentTemp << "  " << checkk << "\n";
             }
-
+	    //printFinalPlacement();
+	    //cout << totalHPWL << "  " << currentTemp << "\n";
             currentTemp *= 0.95;
             //cout << totalHPWL << "\n";
         }
