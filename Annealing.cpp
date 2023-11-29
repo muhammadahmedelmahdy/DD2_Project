@@ -298,32 +298,13 @@ class placer {
                components[comp1] -> x = x_temp2;
                components[comp1] -> y = y_temp2;
                X = components[comp1];
-               /*for(int i = 0; i < components[comp1]->nets.size(); i++){
-                   	//cout << "HERE!";
-               	    HPWL_X_I.push_back(HPWL_X[components[comp1]->nets[i]]);
-               	    HPWL_Y_I.push_back(HPWL_Y[components[comp1]->nets[i]]);
-               	}*/
             }
             if (comp2 != -1) {
                components[comp2] -> x = x_temp1;
                components[comp2] -> y = y_temp1;
                Y = components[comp2];
-               /*for(int i = 0; i < components[comp2]->nets.size(); i++){
-               		//cout << "HERE1!";
-               	    HPWL_X_I2.push_back(HPWL_X[components[comp2]->nets[i]]);
-               	    HPWL_Y_I2.push_back(HPWL_Y[components[comp2]->nets[i]]);
-               	}*/
             }
             IHPWL = totalHPWL;
-
-            //HPWL_Y_I = HPWL_X;
-            //HPWL_X_I = HPWL_Y;
-
-            /*for(int i = 0; i < components[comp2]->nets.size(); i++){
-            	cout << "HERE1!";
-                HPWL_X_I.push_back(HPWL_X[components[comp2]->nets[i]]);
-                HPWL_Y_I.push_back(HPWL_Y[components[comp2]->nets[i]]);
-            }*/
             bool checkk = checker(IHPWL, X, Y, currentTemp);
             //cout << checkk << "  " << currentTemp <<"\n";
             if (checkk == 0) {
@@ -334,7 +315,6 @@ class placer {
                   components[comp1] -> x = x_temp1;
                   components[comp1] -> y = y_temp1;
                   for (int i = 0; i < components[comp1] -> nets.size(); i++) {
-                     //cout << "HERE2!";
                      HPWL_X[components[comp1] -> nets[i]] = HPWL_X_I[components[comp1] -> nets[i]];
                      HPWL_Y[components[comp1] -> nets[i]] = HPWL_Y_I[components[comp1] -> nets[i]];
                   }
@@ -343,14 +323,11 @@ class placer {
                   components[comp2] -> x = x_temp2;
                   components[comp2] -> y = y_temp2;
                   for (int i = 0; i < components[comp2] -> nets.size(); i++) {
-                     //cout << "HERE3!";
                      HPWL_X[components[comp2] -> nets[i]] = HPWL_X_I2[components[comp2] -> nets[i]];
                      HPWL_Y[components[comp2] -> nets[i]] = HPWL_Y_I2[components[comp2] -> nets[i]];
                   }
                }
                totalHPWL = IHPWL;
-               //                    HPWL_X = HPWL_X_I;
-               //                    HPWL_Y = HPWL_Y_I;
 
             }
             //printFinalPlacement();
