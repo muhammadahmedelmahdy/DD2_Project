@@ -63,15 +63,6 @@ For Annimation purpose
     ```bash
     g++ -o placer placer.cpp -lX11
     ```
-   d. Create a folder named images in the same directory
-   e. run the code
-    ```bash
-    ./place input_netlist.txt
-    ```
-   f. in you directory go to images folder and run this command
-    ```bash
-    convert -resize 50% -delay 10 -loop 0 image_{0..[lastimagenumber]}.jpg output.gif
-    ```
    
 
 ## Usage
@@ -90,6 +81,20 @@ Replace `input_netlist.txt` with the path to your netlist file.
 
 The placer will display the final placements, along with the total wirelength before and after the annealing process.
 
+### Running the placer with annimation
+
+1. Create a folder named images in the same directory
+2. run the code
+    ```bash
+    ./place input_netlist.txt
+    ```
+3. in you directory go to images folder and run this command
+    ```bash
+    convert -resize 50% -delay 10 -loop 0 image_{0..[lastimagenumber]}.jpg output.gif
+    ```
+### Output
+
+you will get a GIF that simulates the whole placing process with black representing full cells and white representing empty cells.
 ## Project Structure
 
 The project is organized as follows:
