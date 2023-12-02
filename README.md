@@ -32,6 +32,9 @@ This repository contains an implementation of a simulated annealing-based placer
 ### Prerequisites
 
 - C++ compiler (supporting C++14 or higher)
+For Annimation purpose
+- CImg-dev library
+- ImageMagick
 
 ### Installation
 
@@ -46,6 +49,30 @@ This repository contains an implementation of a simulated annealing-based placer
    ```bash
    g++ -o placer placer.cpp
    ```
+3. For annimation:
+   For Ubuntu:
+   a. install CImg-dev library
+    ```bash
+    sudo apt-get install -y cimg-dev
+    ```
+   b. install ImageMagick
+    ```bash
+    sudo apt-get install imagemagick
+    ```
+   c. compile the code
+    ```bash
+    g++ -o placer placer.cpp -lX11
+    ```
+   d. Create a folder named images in the same directory
+   e. run the code
+    ```bash
+    ./place input_netlist.txt
+    ```
+   f. in you directory go to images folder and run this command
+    ```bash
+    convert -resize 50% -delay 10 -loop 0 image_{0..[lastimagenumber]}.jpg output.gif
+    ```
+   
 
 ## Usage
 
