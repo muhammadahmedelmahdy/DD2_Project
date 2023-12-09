@@ -1,4 +1,4 @@
-#include <vector>
+#include<vector>
 #include<iostream>
 #include<string>
 #include<fstream>
@@ -9,239 +9,374 @@
 #include <chrono>
 #include<unordered_map>
 #include<iomanip>
-#include <random>
+#include<random>
+#include<set>
 
 using namespace std::chrono;
 using namespace std;
 
 struct Cell {
-    int number;
-    int x;
-    int y;
+   int number;
+   int x;
+   int y;
+   vector < int > nets;
 };
 
-vector<vector<Cell>> netlist;
-vector<vector<int>> grid;
-int numRows, numColumns;
+class placer {
+   public: placer(string filename) {
+      parseInput(filename, totalcomponents);
+      totalHPWL = 0;
+      auto start = high_resolution_clock::now();
+      initialPlacement(totalcomponents);
+      auto stop = high_resolution_clock::now();
+      auto duration = duration_cast < microseconds > (stop - start);
+      printFinalPlacement();
+      cout << "Time taken by function: " << duration.count() << " microseconds" << endl;
+      calculateInitialHPWL();
 
-void  ParseInput(string FileName, int& numTotalComponents) { //Function to store the netlist file in vectors.
-    ifstream InetList(FileName);
+   }
 
-    if (!InetList.is_open()) {
-        cerr << "Unable to open the file." << endl;
-        return;
-    }
+   void run() {
+      auto start = high_resolution_clock::now();
+      annealing();
+      auto stop = high_resolution_clock::now();
+      auto duration = duration_cast < microseconds > (stop - start);
+      cout << "Time taken by function: " << duration.count() << " microseconds" << endl;
+      printFinalPlacement();
+   }
 
-    int numNets;
-    InetList >> numTotalComponents >> numNets >> numRows >> numColumns;
-    grid.resize(numRows);
+   private: int numRows,
+   numColumns;
+   int totalcomponents,
+   totalnets;
+   vector < Cell * > components;
+   vector < int > HPWL_X,
+   HPWL_Y;
+   vector < vector < Cell * >> netlist;
+   vector < int > HPWL_Y_I,
+   HPWL_X_I,
+   HPWL_Y_I2,
+   HPWL_X_I2;
+   vector < vector < Cell * >> netlist_y;
+   vector < vector < int >> grid;
+   int totalHPWL;
 
-    for (int i = 0; i < grid.size(); i++)
-        grid[i].resize(numColumns, -1);
+   void parseInput(const string filename, int & totalcomponents) {
+      ifstream netfile(filename);
+      if (!netfile.is_open()) {
+         cout << "File is not open" << endl;
+         return;
+      }
+      netfile >> totalcomponents >> totalnets >> numRows >> numColumns;
+      grid.resize(numRows);
 
-    for (int i = 0; i < numNets; ++i) {
-        int numComponents;
-        InetList >> numComponents;
+      for (int i = 0; i < totalcomponents; i++) {
+         Cell * temp = new Cell;
+         temp -> number = i;
+         temp -> x = -1;
+         temp -> y = -1;
+         components.push_back(temp);
+      }
 
-        vector<Cell> net;
-        for (int j = 0; j < numComponents; ++j) {
-            Cell cell;
-            InetList >> cell.number;
-            cell.x = -1; cell.y = -1;
-            net.push_back(cell);
-        }
+      for (int i = 0; i < grid.size(); i++) {
+         grid[i].resize(numColumns, -1);
+      }
 
-        netlist.push_back(net);
-    }
+      netlist.reserve(totalnets);
+      netlist_y.reserve(totalnets);
+      HPWL_Y_I.reserve(totalnets);
+      HPWL_X_I.reserve(totalnets);
+      HPWL_Y_I2.reserve(totalnets);
+      HPWL_X_I2.reserve(totalnets);
+      for (int i = 0; i < totalnets; ++i) {
+         int numberofcomponents;
+         netfile >> numberofcomponents;
+         vector < Cell * > net;
+         net.reserve(numberofcomponents);
+         for (int j = 0; j < numberofcomponents; j++) {
+            int num;
+            netfile >> num;
+            components[num] -> nets.push_back(i);
+            Cell * temp = components[num];
+            net.push_back(temp);
+         }
+         netlist.push_back(net);
+         netlist_y.push_back(net);
+      }
+      netfile.close();
+   }
 
-    InetList.close();
-}
+   void initialPlacement(int numTotalComponents) {
+      vector < int > cellFills(numTotalComponents);
+      generate(cellFills.begin(), cellFills.end(), [n = 0]() mutable {
+         return n++;
+      });
+      cellFills.resize(numRows * numColumns);
 
-void swap(Cell& a, Cell& b) { //function to swap two cells together in case we are placing a cell in place of other cell.
-    int temp1 = a.x;
-    int temp2 = a.y;
-    a.x = b.x;
-    a.y = b.y;
-    b.x = temp1;
-    b.y = temp2;
-}
+      for (int i = numTotalComponents; i < numRows * numColumns; i++) {
+         cellFills[i] = -1;
+      }
 
-bool compareX(Cell A, Cell B) {
-    return A.x < B.x;
-}
+      auto rd = random_device {};
+      auto rng = default_random_engine {
+         rd()
+      };
+      shuffle(begin(cellFills), end(cellFills), rng);
 
-bool compareY(Cell A, Cell B) {
-    return A.y < B.y;
-}
-
-int calculateHPWL(vector<vector<Cell>> Netlist)
-{
-    int total = 0;
-    for (int i = 0; i < Netlist.size(); i++) {
-        sort(Netlist[i].begin(), Netlist[i].end(), compareX);
-        int dx = Netlist[i][Netlist[i].size() - 1].x - Netlist[i][0].x;
-        sort(Netlist[i].begin(), Netlist[i].end(), compareY);
-        int dy = Netlist[i][Netlist[i].size() - 1].y - Netlist[i][0].y;
-        total += dx + dy;
-    }
-    return total;
-}
-
-bool checker(vector<vector<Cell>> tempNetlist, double temperature) { //function to assist in accepting or rejecting a move.
-
-    int total = calculateHPWL(tempNetlist);
-
-    if (total < temperature) {
-        return true;
-    }
-    else {
-        return false;
-    }
-}
-
-void initialPlacement(int numTotalComponents)
-{
-    vector<int> cellFills(numTotalComponents);
-    generate(cellFills.begin(), cellFills.end(), [n = 1] () mutable { return n++; });
-    cellFills.resize(numRows*numColumns);
-
-    for (int i = numTotalComponents; i <numRows*numColumns; i++)
-    {
-        cellFills[i] = -1;
-    }
-
-    auto rd = random_device {}; 
-    auto rng = default_random_engine { rd() };
-    shuffle(begin(cellFills), end(cellFills), rng);
-    int x = 0;
-
-
-    for (int i = 0; i < numRows; i++)
-        for (int j = 0; j < numColumns; j++)
-                grid[i][j] = cellFills[x++];
-
-    for (int i = 0; i < netlist.size(); i++)
-    {
-        for (int j = 0; j < netlist[i].size(); j++)
-        {
-            auto it = find(cellFills.begin(), cellFills.end(), netlist[i][j].number); 
-            if (it != cellFills.end())  
-                { 
-                    int index = it - cellFills.begin(); 
-                    netlist[i][j].x = index / numColumns;
-                    netlist[i][j].y = index % numColumns;
-                } 
-
-        }
-    }
-
-}
-
-void annealing()
-{    
-    // wire length calculation using HPWL
-    double initialCost = calculateHPWL(netlist);
-    double initialTemp = initialCost * 500;
-    double finalTemp = 5*pow(10, -6)* initialCost;
-    double currentTemp = initialCost;
-
-    // while loop
-    vector<vector<Cell>> temp_netlist = netlist;
-
-    srand(time(0));
-    while (currentTemp > finalTemp)
-    {
-        for (int i = 0; i < 10*numRows*numColumns; i++)
-        {
-        
-            cout << "index: " << i << endl;
-            int x_temp1 = rand() % numRows;
-            int x_temp2 = rand() % numRows;
-            int y_temp1 = rand() % numColumns;
-            int y_temp2 = rand() % numColumns;
-
-            while (x_temp1 == x_temp2 && y_temp1 == y_temp2)
-            {
-                x_temp1 = rand() % numRows;
-                x_temp2 = rand() % numRows;
-                y_temp1 = rand() % numColumns;
-                y_temp2 = rand() % numColumns;
+      int x = 0;
+      for (int i = 0; i < numRows; i++) {
+         for (int j = 0; j < numColumns; j++) {
+            grid[i][j] = cellFills[x];
+            if (cellFills[x] != -1 && cellFills[x] < numTotalComponents) {
+               components[cellFills[x]] -> x = i;
+               components[cellFills[x]] -> y = j;
             }
+            x++;
+         }
+      }
+   }
+
+   static bool compare_X_coordinate(Cell * A, Cell * B) {
+      return A -> x < B -> x;
+   }
+
+   static bool compare_Y_coordinate(Cell * A, Cell * B) {
+      return A -> y < B -> y;
+   }
+
+   int calculateHPWL_X(vector < Cell * > & X) {
+      sort(X.begin(), X.end(), compare_X_coordinate);
+      int dx = X.back() -> x - X.front() -> x;
+      return dx;
+   }
+   int calculateHPWL_Y(vector < Cell * > & Y) {
+      sort(Y.begin(), Y.end(), compare_Y_coordinate);
+      int dy = Y.back() -> y - Y.front() -> y;
+      return dy;
+   }
+
+   void calculateInitialHPWL() {
+      for (int i = 0; i < netlist.size(); i++) {
+         int temp1 = calculateHPWL_X(netlist[i]);
+         int temp2 = calculateHPWL_Y(netlist_y[i]);
+         HPWL_X.push_back(temp1);
+         HPWL_Y.push_back(temp2);
+         HPWL_X_I.push_back(temp1);
+         HPWL_Y_I.push_back(temp2);
+         HPWL_X_I2.push_back(temp1);
+         HPWL_Y_I2.push_back(temp2);
+      }
+
+      for (int i = 0; i < totalnets; i++) {
+         totalHPWL += HPWL_X[i] + HPWL_Y[i];
+      }
+   }
+
+   void checkHPWL_X(const Cell * cell, int net, int c) {
+      if (cell == netlist[net].front()) {
+         //if (cell -> x < netlist[net][1] -> x) {
+            totalHPWL -= HPWL_X[net];
+            HPWL_X[net] = calculateHPWL_X(netlist[net]);
+            totalHPWL += HPWL_X[net];
+        // } else {
+         //   return;
+         //}
+      } else if (cell == netlist[net].back()) {
+         //if (cell -> x > netlist[net][netlist[net].size() - 2] -> x) {
+            totalHPWL -= HPWL_X[net];
+            HPWL_X[net] = calculateHPWL_X(netlist[net]);
+            totalHPWL += HPWL_X[net];
+         //} else {
+         //   return;
+         //}
+      } else {
+         if (cell -> x > netlist[net].back() -> x || cell -> x < netlist[net].front() -> x) {
+            totalHPWL -= HPWL_X[net];
+            HPWL_X[net] = calculateHPWL_X(netlist[net]);
+            totalHPWL += HPWL_X[net];
+         } else {
+            return;
+         }
+      }
+   }
+
+   void checkHPWL_Y(const Cell * cell, int net, int c) {
+      if (cell == netlist_y[net].front()) {
+         //if (cell -> y < netlist_y[net][1] -> y) {
+            totalHPWL -= HPWL_Y[net];
+            HPWL_Y[net] = calculateHPWL_Y(netlist_y[net]);
+            totalHPWL += HPWL_Y[net];
+         //} else {
+            //return;
+         //}
+      } else if (cell == netlist_y[net].back()) {
+         //if (cell -> y > netlist_y[net][netlist_y[net].size() - 2] -> y) {
+            totalHPWL -= HPWL_Y[net];
+            HPWL_Y[net] = calculateHPWL_Y(netlist_y[net]);
+            totalHPWL += HPWL_Y[net];
+         //} else {
+         //   return;
+         //}
+      } else {
+         if (cell -> y > netlist_y[net].back() -> y || cell -> y < netlist_y[net].front() -> y) {
+            totalHPWL -= HPWL_Y[net];
+            HPWL_Y[net] = calculateHPWL_Y(netlist_y[net]);
+            totalHPWL += HPWL_Y[net];
+         } else {
+            return;
+         }
+      }
+   }
+
+   bool checker(const int IHPWL1,
+      const Cell * X,
+         const Cell * Y, double temperature) {
+      //cout << IHPWL1 << "  " << totalHPWL << "\n";
+      if (X != NULL) {
+         for (int i = 0; i < X -> nets.size(); i++) {
+            //cout << "HERE!";
+            HPWL_X_I[X -> nets[i]] = HPWL_X[X -> nets[i]];
+            HPWL_Y_I[X -> nets[i]] = HPWL_Y[X -> nets[i]];
+         }
+      }
+      if (Y != NULL) {
+         for (int i = 0; i < Y -> nets.size(); i++) {
+            //cout << "HERE1!";
+            HPWL_X_I2[Y -> nets[i]] = HPWL_X[Y -> nets[i]];
+            HPWL_Y_I2[Y -> nets[i]] = HPWL_Y[Y -> nets[i]];
+         }
+      }
+      if (X != NULL) {
+         for (int i = 0; i < X -> nets.size(); i++) {
+            checkHPWL_X(X, X -> nets[i], 0);
+            checkHPWL_Y(X, X -> nets[i], 0);
+         }
+      }
+
+      if (Y != NULL) {
+         for (int i = 0; i < Y -> nets.size(); i++) {
+            checkHPWL_X(Y, Y -> nets[i], 1);
+            checkHPWL_Y(Y, Y -> nets[i], 1);
+         }
+      }
+      //cout << totalHPWL << "  " << HPWL_X[7] << HPWL_Y[7] << "  " << components[7]->x << " " << components[7]->y << " " << components[13]->x << " " << components[13]->y << "  " << IHPWL1 << "\n";
+      //std::srand(std::time(0));   
+      int deltaCost = IHPWL1 - totalHPWL;
+      //cout << IHPWL1 << "  " << totalHPWL << "\n";
+      double random_number = static_cast < double > (std::rand()) / RAND_MAX;
+      //cout << random_number << "\n";
+      double e = 1 - exp(static_cast < double > (deltaCost) / temperature);
+      bool check = ((deltaCost < 0 || deltaCost == 0) && (random_number) < e);
+ /*     cout << deltaCost << "  " << temperature << "  " << random_number << "  " << e << "  " << check << "\t";
+     for(int i = 0; i < HPWL_X.size(); i++){
+     	cout << HPWL_X[i] << "  " << HPWL_Y[i] << "\t";
+     }
+     cout << "\n";*/
+      return check;
+   }
+
+   void annealing() {
+      cout << "started annealing" << endl;
+      double initialCost = totalHPWL;
+      double initialTemp = initialCost * 500;
+      double finalTemp = 5 * pow(10, -6) * (initialCost / totalnets);
+      double currentTemp = initialCost * 500;
+      int IHPWL = initialCost;
+      //srand(time(0));
+      while (currentTemp > finalTemp) {
+         int x_temp1, x_temp2, y_temp1, y_temp2;
+         for (int i = 0; i < 10 * numRows * numColumns; ++i) {
+            //srand(time(0));
+            x_temp1 = rand() % numRows;
+            x_temp2 = rand() % numRows;
+            y_temp1 = rand() % numColumns;
+            y_temp2 = rand() % numColumns;
+            //cout << x_temp1 << "  " << x_temp2 << "    " << y_temp1 << "  " << y_temp2 << "\n" ;
+
+            Cell * X = NULL;
+            Cell * Y = NULL;
+
             int comp1 = grid[x_temp1][y_temp1];
             int comp2 = grid[x_temp2][y_temp2];
 
-            for (int k = 0; k < temp_netlist.size(); k++)
-            {
-                for (int j = 0; j < temp_netlist[k].size(); j++)
-                {
-                    if (temp_netlist[k][j].number == comp1)
-                    {
-                        temp_netlist[k][j].x = x_temp2;
-                        temp_netlist[k][j].y = y_temp2;
-
-                    }
-                    if (temp_netlist[k][j].number == comp2)
-                    {
-                        temp_netlist[k][j].x = x_temp1;
-                        temp_netlist[k][j].y = y_temp1;
-
-                    }                
-                }
+            if (comp1 != -1) {
+               components[comp1] -> x = x_temp2;
+               components[comp1] -> y = y_temp2;
+               X = components[comp1];
             }
-            
-            double nextTemp = currentTemp * 0.95;
-            if (checker(temp_netlist, nextTemp))
-            {
-                grid[x_temp1][y_temp1] = comp2;
-                grid[x_temp2][y_temp2] = comp1;
-                netlist = temp_netlist;
+            if (comp2 != -1) {
+               components[comp2] -> x = x_temp1;
+               components[comp2] -> y = y_temp1;
+               Y = components[comp2];
             }
-        }
+            IHPWL = totalHPWL;
+            bool checkk = checker(IHPWL, X, Y, currentTemp);
+            //cout << checkk << "  " << currentTemp <<"\n";
+            if (checkk == 0) {
+               grid[x_temp1][y_temp1] = comp2;
+               grid[x_temp2][y_temp2] = comp1;
+            } else {
+               if (comp1 != -1) {
+                  components[comp1] -> x = x_temp1;
+                  components[comp1] -> y = y_temp1;
+                  for (int i = 0; i < components[comp1] -> nets.size(); i++) {
+                     HPWL_X[components[comp1] -> nets[i]] = HPWL_X_I[components[comp1] -> nets[i]];
+                     HPWL_Y[components[comp1] -> nets[i]] = HPWL_Y_I[components[comp1] -> nets[i]];
+                  }
+               }
+               if (comp2 != -1) {
+                  components[comp2] -> x = x_temp2;
+                  components[comp2] -> y = y_temp2;
+                  for (int i = 0; i < components[comp2] -> nets.size(); i++) {
+                     HPWL_X[components[comp2] -> nets[i]] = HPWL_X_I2[components[comp2] -> nets[i]];
+                     HPWL_Y[components[comp2] -> nets[i]] = HPWL_Y_I2[components[comp2] -> nets[i]];
+                  }
+               }
+               totalHPWL = IHPWL;
 
-        currentTemp *= 0.95;
-    }
-
-    cout << "Initial cost: " << initialCost << endl;
-    cout << "Final Cost: " << calculateHPWL(netlist) << endl; 
-}
-
-void PrintFinalPlacment()
-{
-    for (int i = 0; i < grid.size(); i++)
-    {
-        for (int j = 0; j < grid[i].size(); j++)
-        {
-            if (grid[i][j] == -1)
-            {
-                cout << "----" <<"\t";
             }
-            else
-            {
-                cout << setw(4) << setfill('0') << grid[i][j] << "\t";
+            //printFinalPlacement();
+            //cout << totalHPWL << "  " << IHPWL << "  " << currentTemp << "  " << checkk << "\n";
+         }
+         //printFinalPlacement();
+         //cout << totalHPWL << "  " << currentTemp << "\n";
+         currentTemp *= 0.95;
+         //cout << totalHPWL << "\n";
+      }
+
+      cout << "Initial cost: " << initialCost << endl;
+      cout << "Final Cost: " << totalHPWL << endl;
+   }
+
+   void printFinalPlacement() const {
+      for (const auto & row: grid) {
+         for (int cell: row) {
+            if (cell == -1) {
+               cout << "-" << "\t";
+               //cout << "0";
+            } else {
+               cout << setw(4) << setfill('0') << cell << "\t";
+               //cout << components[cell]->x << components[cell]->y << "\t";
+               //cout << "1";
             }
-        }
-        cout << endl;
-    }
+         }
+         cout << "\n";
+      }
 
-}
+   }
+};
 
-void Run ()
-{
-    int numTotalComponents;
-
-    ParseInput("t3.txt", numTotalComponents);
-    initialPlacement(numTotalComponents);
-    // PrintFinalPlacment();
-    auto start = high_resolution_clock::now();
-    annealing();
-    auto stop = high_resolution_clock::now();
-    auto duration = duration_cast<microseconds>(stop - start);
-    cout << "Time taken by function: " << duration.count() << " microseconds" << endl;
-    // PrintFinalPlacment();
-
-}
+// void emitError(char * s) {
+//    cout << s;
+//    exit(0);
+// }
 
 int main() {
-    Run();
-    return 0;
+
+   // if (argc < 2) emitError("use: placer <netlist_file_name>\n");
+   srand(time(0));
+   placer place("d1.txt");
+   place.run();
+   return 0;
 }
+ 
