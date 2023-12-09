@@ -65,7 +65,7 @@ class placer {
       ifstream netfile(filename);
       if (!netfile.is_open()) {
          cout << "File is not open" << endl;
-         return;
+         exit(0);
       }
       netfile >> totalcomponents >> totalnets >> numRows >> numColumns;
       grid.resize(numRows);
@@ -174,21 +174,14 @@ class placer {
 
    void checkHPWL_X(const Cell * cell, int net, int c) {
       if (cell == netlist[net].front()) {
-         //if (cell -> x < netlist[net][1] -> x) {
             totalHPWL -= HPWL_X[net];
             HPWL_X[net] = calculateHPWL_X(netlist[net]);
             totalHPWL += HPWL_X[net];
-        // } else {
-         //   return;
-         //}
+
       } else if (cell == netlist[net].back()) {
-         //if (cell -> x > netlist[net][netlist[net].size() - 2] -> x) {
             totalHPWL -= HPWL_X[net];
             HPWL_X[net] = calculateHPWL_X(netlist[net]);
             totalHPWL += HPWL_X[net];
-         //} else {
-         //   return;
-         //}
       } else {
          if (cell -> x > netlist[net].back() -> x || cell -> x < netlist[net].front() -> x) {
             totalHPWL -= HPWL_X[net];
@@ -202,21 +195,14 @@ class placer {
 
    void checkHPWL_Y(const Cell * cell, int net, int c) {
       if (cell == netlist_y[net].front()) {
-         //if (cell -> y < netlist_y[net][1] -> y) {
             totalHPWL -= HPWL_Y[net];
             HPWL_Y[net] = calculateHPWL_Y(netlist_y[net]);
             totalHPWL += HPWL_Y[net];
-         //} else {
-            //return;
-         //}
+
       } else if (cell == netlist_y[net].back()) {
-         //if (cell -> y > netlist_y[net][netlist_y[net].size() - 2] -> y) {
             totalHPWL -= HPWL_Y[net];
             HPWL_Y[net] = calculateHPWL_Y(netlist_y[net]);
             totalHPWL += HPWL_Y[net];
-         //} else {
-         //   return;
-         //}
       } else {
          if (cell -> y > netlist_y[net].back() -> y || cell -> y < netlist_y[net].front() -> y) {
             totalHPWL -= HPWL_Y[net];
@@ -231,17 +217,14 @@ class placer {
    bool checker(const int IHPWL1,
       const Cell * X,
          const Cell * Y, double temperature) {
-      //cout << IHPWL1 << "  " << totalHPWL << "\n";
       if (X != NULL) {
          for (int i = 0; i < X -> nets.size(); i++) {
-            //cout << "HERE!";
             HPWL_X_I[X -> nets[i]] = HPWL_X[X -> nets[i]];
             HPWL_Y_I[X -> nets[i]] = HPWL_Y[X -> nets[i]];
          }
       }
       if (Y != NULL) {
          for (int i = 0; i < Y -> nets.size(); i++) {
-            //cout << "HERE1!";
             HPWL_X_I2[Y -> nets[i]] = HPWL_X[Y -> nets[i]];
             HPWL_Y_I2[Y -> nets[i]] = HPWL_Y[Y -> nets[i]];
          }
@@ -259,12 +242,8 @@ class placer {
             checkHPWL_Y(Y, Y -> nets[i], 1);
          }
       }
-      //cout << totalHPWL << "  " << HPWL_X[7] << HPWL_Y[7] << "  " << components[7]->x << " " << components[7]->y << " " << components[13]->x << " " << components[13]->y << "  " << IHPWL1 << "\n";
-      //std::srand(std::time(0));   
       int deltaCost = IHPWL1 - totalHPWL;
-      //cout << IHPWL1 << "  " << totalHPWL << "\n";
       double random_number = static_cast < double > (std::rand()) / RAND_MAX;
-      //cout << random_number << "\n";
       double e = 1 - exp(static_cast < double > (deltaCost) / temperature);
       bool check = ((deltaCost < 0 || deltaCost == 0) && (random_number) < e);
  /*     cout << deltaCost << "  " << temperature << "  " << random_number << "  " << e << "  " << check << "\t";
@@ -282,16 +261,13 @@ class placer {
       double finalTemp = 5 * pow(10, -6) * (initialCost / totalnets);
       double currentTemp = initialCost * 500;
       int IHPWL = initialCost;
-      //srand(time(0));
       while (currentTemp > finalTemp) {
          int x_temp1, x_temp2, y_temp1, y_temp2;
          for (int i = 0; i < 10 * numRows * numColumns; ++i) {
-            //srand(time(0));
             x_temp1 = rand() % numRows;
             x_temp2 = rand() % numRows;
             y_temp1 = rand() % numColumns;
             y_temp2 = rand() % numColumns;
-            //cout << x_temp1 << "  " << x_temp2 << "    " << y_temp1 << "  " << y_temp2 << "\n" ;
 
             Cell * X = NULL;
             Cell * Y = NULL;
@@ -335,13 +311,8 @@ class placer {
                totalHPWL = IHPWL;
 
             }
-            //printFinalPlacement();
-            //cout << totalHPWL << "  " << IHPWL << "  " << currentTemp << "  " << checkk << "\n";
          }
-         //printFinalPlacement();
-         //cout << totalHPWL << "  " << currentTemp << "\n";
          currentTemp *= 0.95;
-         //cout << totalHPWL << "\n";
       }
 
       cout << "Initial cost: " << initialCost << endl;
@@ -353,11 +324,8 @@ class placer {
          for (int cell: row) {
             if (cell == -1) {
                cout << "-" << "\t";
-               //cout << "0";
             } else {
                cout << setw(4) << setfill('0') << cell << "\t";
-               //cout << components[cell]->x << components[cell]->y << "\t";
-               //cout << "1";
             }
          }
          cout << "\n";
@@ -366,16 +334,17 @@ class placer {
    }
 };
 
-// void emitError(char * s) {
-//    cout << s;
-//    exit(0);
-// }
+void emitError(string s) {
+   cout << s;
+   exit(0);
+}
 
-int main() {
+int main(int argc, char *argv[]) {
 
-   // if (argc < 2) emitError("use: placer <netlist_file_name>\n");
-   srand(time(0));
-   placer place("d1.txt");
+   if (argc < 2) emitError("use: placer <netlist_file_name>\n");
+   string filename = "Test Cases/" + string(argv[1]);
+   cout << filename << endl;
+   placer place(filename);
    place.run();
    return 0;
 }
