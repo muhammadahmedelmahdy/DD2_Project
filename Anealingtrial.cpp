@@ -402,14 +402,14 @@ void savePlacementImage(const std::string& filename) const
    }
 };
 
-void emitError(char * s) {
-   cout << s;
-   exit(0);
-}
+// void emitError(char * s) {
+//    cout << s;
+//    exit(0);
+// }
 
 int main(int argc, char * argv[]) {
 
-   if (argc < 2) emitError("use: placer <netlist_file_name>\n");
+   // if (argc < 2) emitError("use: placer <netlist_file_name>\n");
    srand(time(0));
    placer place(argv[1]);
    place.run();

@@ -366,16 +366,17 @@ class placer {
    }
 };
 
-void emitError(char * s) {
-   cout << s;
-   exit(0);
-}
+// void emitError(char * s) {
+//    cout << s;
+//    exit(0);
+// }
 
-int main(int argc, char * argv[]) {
+int main() {
 
-   if (argc < 2) emitError("use: placer <netlist_file_name>\n");
+   // if (argc < 2) emitError("use: placer <netlist_file_name>\n");
    srand(time(0));
-   placer place(argv[1]);
+   placer place("d1.txt");
    place.run();
    return 0;
 }
+ 
