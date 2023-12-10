@@ -43,6 +43,8 @@ class placer {
       auto duration = duration_cast < microseconds > (stop - start);
       cout << "Time taken by function: " << duration.count() << " microseconds" << endl;
       printFinalPlacement();
+      cout << endl <<  "Binary representation: " << endl << endl;
+      printBinarylPlacement();
    }
 
    private: int numRows,
@@ -287,7 +289,6 @@ class placer {
             }
             IHPWL = totalHPWL;
             bool checkk = checker(IHPWL, X, Y, currentTemp);
-            //cout << checkk << "  " << currentTemp <<"\n";
             if (checkk == 0) {
                grid[x_temp1][y_temp1] = comp2;
                grid[x_temp2][y_temp2] = comp1;
@@ -323,9 +324,23 @@ class placer {
       for (const auto & row: grid) {
          for (int cell: row) {
             if (cell == -1) {
-               cout << "-" << "\t";
+               cout << "----" << "\t";
             } else {
                cout << setw(4) << setfill('0') << cell << "\t";
+            }
+         }
+         cout << "\n";
+      }
+
+   }
+
+   void printBinarylPlacement() const {
+      for (const auto & row: grid) {
+         for (int cell: row) {
+            if (cell == -1) {
+               cout << 0;
+            } else {
+               cout << 1;
             }
          }
          cout << "\n";
@@ -343,7 +358,6 @@ int main(int argc, char *argv[]) {
 
    if (argc < 2) emitError("use: placer <netlist_file_name>\n");
    string filename = "Test Cases/" + string(argv[1]);
-   cout << filename << endl;
    placer place(filename);
    place.run();
    return 0;
