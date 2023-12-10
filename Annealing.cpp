@@ -45,20 +45,15 @@ class placer {
       printFinalPlacement();
    }
 
-   private: int numRows,
-   numColumns;
-   int totalcomponents,
-   totalnets;
+   private: 
+   int numRows, numColumns;
+   int totalcomponents, totalnets;
+   unordered_map <int, pair< Cell *, Cell *>> I_HPWL_X, I_HPWL_Y;
    vector < Cell * > components;
-   vector < int > HPWL_X,
-   HPWL_Y;
-   vector < vector < Cell * >> netlist;
-   vector < int > HPWL_Y_I,
-   HPWL_X_I,
-   HPWL_Y_I2,
-   HPWL_X_I2;
-   vector < vector < Cell * >> netlist_y;
+   vector < vector < Cell * >> netlist, netlist_y;
    vector < vector < int >> grid;
+   vector < int > HPWL_X, HPWL_Y;
+   vector < pair<Cell *, Cell *>> HPWL_X_P, HPWL_Y_P;
    int totalHPWL;
 
    void parseInput(const string filename, int & totalcomponents) {
@@ -84,10 +79,8 @@ class placer {
 
       netlist.reserve(totalnets);
       netlist_y.reserve(totalnets);
-      HPWL_Y_I.reserve(totalnets);
-      HPWL_X_I.reserve(totalnets);
-      HPWL_Y_I2.reserve(totalnets);
-      HPWL_X_I2.reserve(totalnets);
+      HPWL_X_P.reserve(totalnets);
+      HPWL_Y_P.reserve(totalnets);
       for (int i = 0; i < totalnets; ++i) {
          int numberofcomponents;
          netfile >> numberofcomponents;
@@ -118,9 +111,7 @@ class placer {
       }
 
       auto rd = random_device {};
-      auto rng = default_random_engine {
-         rd()
-      };
+      auto rng = default_random_engine { rd() };
       shuffle(begin(cellFills), end(cellFills), rng);
 
       int x = 0;
@@ -146,11 +137,13 @@ class placer {
 
    int calculateHPWL_X(vector < Cell * > & X) {
       sort(X.begin(), X.end(), compare_X_coordinate);
+      HPWL_X_P.push_back(make_pair(X.front(), X.back()));
       int dx = X.back() -> x - X.front() -> x;
       return dx;
    }
    int calculateHPWL_Y(vector < Cell * > & Y) {
       sort(Y.begin(), Y.end(), compare_Y_coordinate);
+      HPWL_Y_P.push_back(make_pair(Y.front(), Y.back()));
       int dy = Y.back() -> y - Y.front() -> y;
       return dy;
    }
@@ -161,31 +154,41 @@ class placer {
          int temp2 = calculateHPWL_Y(netlist_y[i]);
          HPWL_X.push_back(temp1);
          HPWL_Y.push_back(temp2);
-         HPWL_X_I.push_back(temp1);
-         HPWL_Y_I.push_back(temp2);
-         HPWL_X_I2.push_back(temp1);
-         HPWL_Y_I2.push_back(temp2);
       }
-
+      
       for (int i = 0; i < totalnets; i++) {
          totalHPWL += HPWL_X[i] + HPWL_Y[i];
       }
    }
 
    void checkHPWL_X(const Cell * cell, int net, int c) {
-      if (cell == netlist[net].front()) {
-            totalHPWL -= HPWL_X[net];
-            HPWL_X[net] = calculateHPWL_X(netlist[net]);
-            totalHPWL += HPWL_X[net];
+      if (cell == HPWL_X_P[net].first) {
+         
+         I_HPWL_X.insert({net, HPWL_X_P[net]});
 
-      } else if (cell == netlist[net].back()) {
-            totalHPWL -= HPWL_X[net];
-            HPWL_X[net] = calculateHPWL_X(netlist[net]);
-            totalHPWL += HPWL_X[net];
+         totalHPWL -= HPWL_X[net];
+         HPWL_X_P[net].first = min_element(netlist[net].begin(), netlist[net].end(), compare_X_coordinate)[0];
+         HPWL_X_P[net].second = max_element(netlist[net].begin(), netlist[net].end(), compare_X_coordinate)[0];
+         HPWL_X[net] = HPWL_X_P[net].second->x - HPWL_X_P[net].first->x;
+         totalHPWL += HPWL_X[net];
+
+      } else if (cell == HPWL_X_P[net].second) {
+         I_HPWL_X.insert({net, HPWL_X_P[net]});
+
+
+         totalHPWL -= HPWL_X[net];
+         HPWL_X_P[net].first = min_element(netlist[net].begin(), netlist[net].end(), compare_X_coordinate)[0];
+         HPWL_X_P[net].second = max_element(netlist[net].begin(), netlist[net].end(), compare_X_coordinate)[0];
+         HPWL_X[net] = HPWL_X_P[net].second->x - HPWL_X_P[net].first->x;
+         totalHPWL += HPWL_X[net];
       } else {
-         if (cell -> x > netlist[net].back() -> x || cell -> x < netlist[net].front() -> x) {
+         if (cell -> x > HPWL_X_P[net].second -> x || cell -> x < HPWL_X_P[net].first -> x) {
+            I_HPWL_X.insert({net, HPWL_X_P[net]});
+
             totalHPWL -= HPWL_X[net];
-            HPWL_X[net] = calculateHPWL_X(netlist[net]);
+            HPWL_X_P[net].first = min_element(netlist[net].begin(), netlist[net].end(), compare_X_coordinate)[0];
+            HPWL_X_P[net].second = max_element(netlist[net].begin(), netlist[net].end(), compare_X_coordinate)[0];
+            HPWL_X[net] = HPWL_X_P[net].second->x - HPWL_X_P[net].first->x;
             totalHPWL += HPWL_X[net];
          } else {
             return;
@@ -194,19 +197,34 @@ class placer {
    }
 
    void checkHPWL_Y(const Cell * cell, int net, int c) {
-      if (cell == netlist_y[net].front()) {
-            totalHPWL -= HPWL_Y[net];
-            HPWL_Y[net] = calculateHPWL_Y(netlist_y[net]);
-            totalHPWL += HPWL_Y[net];
+      if (cell == HPWL_Y_P[net].first) {
+         
+         I_HPWL_Y.insert({net, HPWL_Y_P[net]});
 
-      } else if (cell == netlist_y[net].back()) {
-            totalHPWL -= HPWL_Y[net];
-            HPWL_Y[net] = calculateHPWL_Y(netlist_y[net]);
-            totalHPWL += HPWL_Y[net];
+
+         totalHPWL -= HPWL_Y[net];
+         HPWL_Y_P[net].first = min_element(netlist[net].begin(), netlist[net].end(), compare_Y_coordinate)[0];
+         HPWL_Y_P[net].second = max_element(netlist[net].begin(), netlist[net].end(), compare_Y_coordinate)[0];
+         HPWL_Y[net] = HPWL_Y_P[net].second->y - HPWL_Y_P[net].first->y;
+         totalHPWL += HPWL_Y[net];
+
+      } else if (cell == HPWL_Y_P[net].second) {
+         I_HPWL_Y.insert({net, HPWL_Y_P[net]});
+
+         totalHPWL -= HPWL_Y[net];
+         HPWL_Y_P[net].first = min_element(netlist[net].begin(), netlist[net].end(), compare_Y_coordinate)[0];
+         HPWL_Y_P[net].second = max_element(netlist[net].begin(), netlist[net].end(), compare_Y_coordinate)[0];
+         HPWL_Y[net] = HPWL_Y_P[net].second->y - HPWL_Y_P[net].first->y;
+         totalHPWL += HPWL_Y[net];
       } else {
-         if (cell -> y > netlist_y[net].back() -> y || cell -> y < netlist_y[net].front() -> y) {
+         if (cell -> y > HPWL_Y_P[net].second -> y || cell -> y < HPWL_Y_P[net].first -> y) {
+            I_HPWL_Y.insert({net, HPWL_Y_P[net]});
+
+
             totalHPWL -= HPWL_Y[net];
-            HPWL_Y[net] = calculateHPWL_Y(netlist_y[net]);
+            HPWL_Y_P[net].first = min_element(netlist[net].begin(), netlist[net].end(), compare_Y_coordinate)[0];
+            HPWL_Y_P[net].second = max_element(netlist[net].begin(), netlist[net].end(), compare_Y_coordinate)[0];
+            HPWL_Y[net] = HPWL_Y_P[net].second->y - HPWL_Y_P[net].first->y;
             totalHPWL += HPWL_Y[net];
          } else {
             return;
@@ -214,21 +232,12 @@ class placer {
       }
    }
 
-   bool checker(const int IHPWL1,
-      const Cell * X,
-         const Cell * Y, double temperature) {
-      if (X != NULL) {
-         for (int i = 0; i < X -> nets.size(); i++) {
-            HPWL_X_I[X -> nets[i]] = HPWL_X[X -> nets[i]];
-            HPWL_Y_I[X -> nets[i]] = HPWL_Y[X -> nets[i]];
-         }
-      }
-      if (Y != NULL) {
-         for (int i = 0; i < Y -> nets.size(); i++) {
-            HPWL_X_I2[Y -> nets[i]] = HPWL_X[Y -> nets[i]];
-            HPWL_Y_I2[Y -> nets[i]] = HPWL_Y[Y -> nets[i]];
-         }
-      }
+   bool checkerr(const int IHPWL, const Cell * X,
+                           const Cell * Y, double temperature) {
+      
+      I_HPWL_X.clear();
+      I_HPWL_Y.clear();
+
       if (X != NULL) {
          for (int i = 0; i < X -> nets.size(); i++) {
             checkHPWL_X(X, X -> nets[i], 0);
@@ -242,7 +251,7 @@ class placer {
             checkHPWL_Y(Y, Y -> nets[i], 1);
          }
       }
-      int deltaCost = IHPWL1 - totalHPWL;
+      int deltaCost = IHPWL - totalHPWL;
       double random_number = static_cast < double > (std::rand()) / RAND_MAX;
       double e = 1 - exp(static_cast < double > (deltaCost) / temperature);
       bool check = ((deltaCost < 0 || deltaCost == 0) && (random_number) < e);
@@ -286,8 +295,7 @@ class placer {
                Y = components[comp2];
             }
             IHPWL = totalHPWL;
-            bool checkk = checker(IHPWL, X, Y, currentTemp);
-            //cout << checkk << "  " << currentTemp <<"\n";
+            bool checkk = checkerr(IHPWL, X, Y, currentTemp);
             if (checkk == 0) {
                grid[x_temp1][y_temp1] = comp2;
                grid[x_temp2][y_temp2] = comp1;
@@ -295,26 +303,27 @@ class placer {
                if (comp1 != -1) {
                   components[comp1] -> x = x_temp1;
                   components[comp1] -> y = y_temp1;
-                  for (int i = 0; i < components[comp1] -> nets.size(); i++) {
-                     HPWL_X[components[comp1] -> nets[i]] = HPWL_X_I[components[comp1] -> nets[i]];
-                     HPWL_Y[components[comp1] -> nets[i]] = HPWL_Y_I[components[comp1] -> nets[i]];
-                  }
                }
                if (comp2 != -1) {
                   components[comp2] -> x = x_temp2;
                   components[comp2] -> y = y_temp2;
-                  for (int i = 0; i < components[comp2] -> nets.size(); i++) {
-                     HPWL_X[components[comp2] -> nets[i]] = HPWL_X_I2[components[comp2] -> nets[i]];
-                     HPWL_Y[components[comp2] -> nets[i]] = HPWL_Y_I2[components[comp2] -> nets[i]];
-                  }
                }
-               totalHPWL = IHPWL;
+               for (const auto pair : I_HPWL_X)
+                  {
+                     HPWL_X_P[pair.first] = pair.second;
+                     HPWL_X[pair.first] = HPWL_X_P[pair.first].second->x - HPWL_X_P[pair.first].first->x;
+                  }
+               for (const auto pair : I_HPWL_Y)
+                  {
+                     HPWL_Y_P[pair.first] = pair.second;
+                     HPWL_Y[pair.first] = HPWL_Y_P[pair.first].second->y - HPWL_Y_P[pair.first].first->y;
+                  }       
 
+               totalHPWL = IHPWL;
             }
          }
          currentTemp *= 0.95;
       }
-
       cout << "Initial cost: " << initialCost << endl;
       cout << "Final Cost: " << totalHPWL << endl;
    }
@@ -342,6 +351,7 @@ void emitError(string s) {
 int main(int argc, char *argv[]) {
 
    if (argc < 2) emitError("use: placer <netlist_file_name>\n");
+   // "Test Cases/" + 
    string filename = "Test Cases/" + string(argv[1]);
    cout << filename << endl;
    placer place(filename);
