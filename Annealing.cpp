@@ -23,6 +23,8 @@ struct Cell {
 };
 
 class placer {
+
+   // constructor for the placer object that is responsible for doing the initial random placement and calculating the initial hpwl
    public: placer(string filename) {
       parseInput(filename, totalcomponents);
       totalHPWL = 0;
@@ -30,24 +32,26 @@ class placer {
       initialPlacement(totalcomponents);
       auto stop = high_resolution_clock::now();
       auto duration = duration_cast < microseconds > (stop - start);
-      printFinalPlacement();
+      printPlacement();
       cout << "Time taken by function: " << duration.count() << " microseconds" << endl;
       calculateInitialHPWL();
 
    }
 
+   // Run function is reponsible for calling the functions needed for annealing in addition to calculating the annwaling time
    void run() {
       auto start = high_resolution_clock::now();
       annealing();
       auto stop = high_resolution_clock::now();
       auto duration = duration_cast < microseconds > (stop - start);
       cout << "Time taken by function: " << duration.count() << " microseconds" << endl;
-      printFinalPlacement();
+      printPlacement();
       cout << endl <<  "Binary representation: " << endl << endl;
       printBinarylPlacement();
    }
 
-   private: int numRows,
+   private: 
+   int numRows,
    numColumns;
    int totalcomponents,
    totalnets;
@@ -63,6 +67,7 @@ class placer {
    vector < vector < int >> grid;
    int totalHPWL;
 
+   // Function to parse the netlist file and intialize the private variables with the values needed for the annealing
    void parseInput(const string filename, int & totalcomponents) {
       ifstream netfile(filename);
       if (!netfile.is_open()) {
@@ -108,6 +113,7 @@ class placer {
       netfile.close();
    }
 
+   // Function to do the initial placement of the components in the 2D grid
    void initialPlacement(int numTotalComponents) {
       vector < int > cellFills(numTotalComponents);
       generate(cellFills.begin(), cellFills.end(), [n = 0]() mutable {
@@ -138,25 +144,31 @@ class placer {
       }
    }
 
+   // Comparator function to help sort cells according to the values of x 
    static bool compare_X_coordinate(Cell * A, Cell * B) {
       return A -> x < B -> x;
    }
 
+   // Comparator function to help sort cells according to the values of y
    static bool compare_Y_coordinate(Cell * A, Cell * B) {
       return A -> y < B -> y;
    }
 
+   // Function to calculate the x component of HPWL to a specific net
    int calculateHPWL_X(vector < Cell * > & X) {
       sort(X.begin(), X.end(), compare_X_coordinate);
       int dx = X.back() -> x - X.front() -> x;
       return dx;
    }
+
+   // Function to calculate the y component of HPWL to a specific net
    int calculateHPWL_Y(vector < Cell * > & Y) {
       sort(Y.begin(), Y.end(), compare_Y_coordinate);
       int dy = Y.back() -> y - Y.front() -> y;
       return dy;
    }
 
+   // Function to calculate the initial total HPWL and to intilize the values of the x and y components of HPWL to each net
    void calculateInitialHPWL() {
       for (int i = 0; i < netlist.size(); i++) {
          int temp1 = calculateHPWL_X(netlist[i]);
@@ -174,6 +186,7 @@ class placer {
       }
    }
 
+   // Function to check is the x component of an hpwl of a specific net need to be changed because of the change of the location of a specific cell
    void checkHPWL_X(const Cell * cell, int net, int c) {
       if (cell == netlist[net].front()) {
             totalHPWL -= HPWL_X[net];
@@ -195,6 +208,7 @@ class placer {
       }
    }
 
+   // Function to check is the y component of an hpwl of a specific net need to be changed because of the change of the location of a specific cell
    void checkHPWL_Y(const Cell * cell, int net, int c) {
       if (cell == netlist_y[net].front()) {
             totalHPWL -= HPWL_Y[net];
@@ -216,6 +230,7 @@ class placer {
       }
    }
 
+   // Function to check if the swap of two cells will be accepted by checking the total hpwl
    bool checker(const int IHPWL1,
       const Cell * X,
          const Cell * Y, double temperature) {
@@ -256,6 +271,7 @@ class placer {
       return check;
    }
 
+   // Annealing function is responsible for the annealing process by swaping to random cells and checking if the swap is accepted or not
    void annealing() {
       cout << "started annealing" << endl;
       double initialCost = totalHPWL;
@@ -320,7 +336,8 @@ class placer {
       cout << "Final Cost: " << totalHPWL << endl;
    }
 
-   void printFinalPlacement() const {
+   // Print the 2D grid with the componenets names
+   void printPlacement() const {
       for (const auto & row: grid) {
          for (int cell: row) {
             if (cell == -1) {
@@ -334,6 +351,7 @@ class placer {
 
    }
 
+   // Print the 2D grid with a binary representation of 0 to empty cells and 1 to occupied cells
    void printBinarylPlacement() const {
       for (const auto & row: grid) {
          for (int cell: row) {
@@ -349,6 +367,7 @@ class placer {
    }
 };
 
+// Check if there is an error in the main parameters
 void emitError(string s) {
    cout << s;
    exit(0);
