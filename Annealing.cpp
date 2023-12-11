@@ -156,15 +156,17 @@ class placer {
 
    // Function to calculate the x component of HPWL to a specific net
    int calculateHPWL_X(vector < Cell * > & X) {
-      sort(X.begin(), X.end(), compare_X_coordinate);
-      int dx = X.back() -> x - X.front() -> x;
+      Cell* Min = min_element(X.begin(), X.end(), compare_X_coordinate)[0];
+      Cell* Max = max_element(X.begin(), X.end(), compare_X_coordinate)[0];
+      int dx = Max -> x - Min -> x;
       return dx;
    }
 
    // Function to calculate the y component of HPWL to a specific net
    int calculateHPWL_Y(vector < Cell * > & Y) {
-      sort(Y.begin(), Y.end(), compare_Y_coordinate);
-      int dy = Y.back() -> y - Y.front() -> y;
+      Cell* Min = min_element(Y.begin(), Y.end(), compare_Y_coordinate)[0];
+      Cell* Max = max_element(Y.begin(), Y.end(), compare_Y_coordinate)[0];
+      int dy = Max -> y - Min -> y;
       return dy;
    }
 
