@@ -263,11 +263,6 @@ class placer {
       double random_number = static_cast < double > (std::rand()) / RAND_MAX;
       double e = 1 - exp(static_cast < double > (deltaCost) / temperature);
       bool check = ((deltaCost < 0 || deltaCost == 0) && (random_number) < e);
- /*     cout << deltaCost << "  " << temperature << "  " << random_number << "  " << e << "  " << check << "\t";
-     for(int i = 0; i < HPWL_X.size(); i++){
-     	cout << HPWL_X[i] << "  " << HPWL_Y[i] << "\t";
-     }
-     cout << "\n";*/
       return check;
    }
 
