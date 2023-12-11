@@ -271,30 +271,30 @@ class placer {
       return check;
    }
 
-void savePlacementImage(const std::string& filename) const
-{
-    const int cellSize = 30;  // Adjust cell size as needed
-    const int imageSizeX = cellSize * numColumns;
-    const int imageSizeY = cellSize * numRows;
+   void savePlacementImage(const std::string& filename) const
+   {
+      const int cellSize = 30;  // Adjust cell size as needed
+      const int imageSizeX = cellSize * numColumns;
+      const int imageSizeY = cellSize * numRows;
 
-    CImg<unsigned char> img(imageSizeX, imageSizeY, 1, 3, 255);
+      CImg<unsigned char> img(imageSizeX, imageSizeY, 1, 3, 255);
 
-    for (int i = 0; i < numRows; i++) {
-        for (int j = 0; j < numColumns; j++) {
-            int cell = grid[i][j];
-            unsigned char color[3] = {255, 255, 255};  // Default color for empty cell
+      for (int i = 0; i < numRows; i++) {
+         for (int j = 0; j < numColumns; j++) {
+               int cell = grid[i][j];
+               unsigned char color[3] = {255, 255, 255};  // Default color for empty cell
 
-            if (cell != -1) {
-                // Adjust the color based on the cell number
-                color[0] = color[1] = color[2] = 0/*cell * 10*/;
-            }
+               if (cell != -1) {
+                  // Adjust the color based on the cell number
+                  color[0] = color[1] = color[2] = 0/*cell * 10*/;
+               }
 
-            img.draw_rectangle(j * cellSize, i * cellSize, (j + 1) * cellSize - 1, (i + 1) * cellSize - 1, color);
-        }
-    }
+               img.draw_rectangle(j * cellSize, i * cellSize, (j + 1) * cellSize - 1, (i + 1) * cellSize - 1, color);
+         }
+      }
 
-    img.save_bmp(filename.c_str());
-}
+      img.save_bmp(filename.c_str());
+   }
 
 
    // Annealing function is responsible for the annealing process by swaping to random cells and checking if the swap is accepted or not
