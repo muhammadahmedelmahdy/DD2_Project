@@ -47,6 +47,7 @@ class placer {
       auto duration = duration_cast < microseconds > (stop - start);
       cout << "Time taken by function: " << duration.count() << " microseconds" << endl;
       printFinalPlacement();
+      cout << endl <<  "Binary representation: " << endl << endl;
       printBinarylPlacement();
    }
 
