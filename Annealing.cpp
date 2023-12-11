@@ -63,7 +63,6 @@ class placer {
    HPWL_X_I,
    HPWL_Y_I2,
    HPWL_X_I2;
-   vector < vector < Cell * >> netlist_y;
    vector < vector < int >> grid;
    int totalHPWL;
 
@@ -90,7 +89,6 @@ class placer {
       }
 
       netlist.reserve(totalnets);
-      netlist_y.reserve(totalnets);
       HPWL_Y_I.reserve(totalnets);
       HPWL_X_I.reserve(totalnets);
       HPWL_Y_I2.reserve(totalnets);
@@ -108,7 +106,6 @@ class placer {
             net.push_back(temp);
          }
          netlist.push_back(net);
-         netlist_y.push_back(net);
       }
       netfile.close();
    }
@@ -174,7 +171,7 @@ class placer {
    void calculateInitialHPWL() {
       for (int i = 0; i < netlist.size(); i++) {
          int temp1 = calculateHPWL_X(netlist[i]);
-         int temp2 = calculateHPWL_Y(netlist_y[i]);
+         int temp2 = calculateHPWL_Y(netlist[i]);
          HPWL_X.push_back(temp1);
          HPWL_Y.push_back(temp2);
          HPWL_X_I.push_back(temp1);
@@ -212,19 +209,19 @@ class placer {
 
    // Function to check is the y component of an hpwl of a specific net need to be changed because of the change of the location of a specific cell
    void checkHPWL_Y(const Cell * cell, int net, int c) {
-      if (cell == netlist_y[net].front()) {
+      if (cell == netlist[net].front()) {
             totalHPWL -= HPWL_Y[net];
-            HPWL_Y[net] = calculateHPWL_Y(netlist_y[net]);
+            HPWL_Y[net] = calculateHPWL_Y(netlist[net]);
             totalHPWL += HPWL_Y[net];
 
-      } else if (cell == netlist_y[net].back()) {
+      } else if (cell == netlist[net].back()) {
             totalHPWL -= HPWL_Y[net];
-            HPWL_Y[net] = calculateHPWL_Y(netlist_y[net]);
+            HPWL_Y[net] = calculateHPWL_Y(netlist[net]);
             totalHPWL += HPWL_Y[net];
       } else {
-         if (cell -> y > netlist_y[net].back() -> y || cell -> y < netlist_y[net].front() -> y) {
+         if (cell -> y > netlist[net].back() -> y || cell -> y < netlist[net].front() -> y) {
             totalHPWL -= HPWL_Y[net];
-            HPWL_Y[net] = calculateHPWL_Y(netlist_y[net]);
+            HPWL_Y[net] = calculateHPWL_Y(netlist[net]);
             totalHPWL += HPWL_Y[net];
          } else {
             return;
